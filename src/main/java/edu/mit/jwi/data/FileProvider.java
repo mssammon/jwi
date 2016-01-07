@@ -689,7 +689,7 @@ public class FileProvider implements IDataProvider, ILoadable, ILoadPolicy {
 	 * @since JWI 1.0
 	 */
 	public static File toFile(URL url) throws IOException {
-		if(!url.getProtocol().equals("file")) 
+		if(!(url.getProtocol().equals("file") || url.getProtocol().equals("jar") ) )
 			throw new IllegalArgumentException("URL source must use 'file' protocol");
 		try {
 			return new File(URLDecoder.decode(url.getPath(), "UTF-8"));
