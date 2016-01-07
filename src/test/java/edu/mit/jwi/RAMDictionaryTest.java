@@ -36,48 +36,50 @@ public class RAMDictionaryTest {
     {
         String jarPath = "wordnet-dict";
 
-        boolean isCompressed = false;
-        URI uri = null;
-        URL url = null;
-        try {
-            url = getClass().getClassLoader().getResource( jarPath );
-            uri = url.toURI();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-            fail( e.getMessage() );
-        }
+//        boolean isCompressed = false;
+//        URI uri = null;
+//        URL url = null;
+//        try {
+//            url = getClass().getClassLoader().getResource( jarPath );
+//            uri = url.toURI();
+//        } catch (URISyntaxException e) {
+//            e.printStackTrace();
+//            fail( e.getMessage() );
+//        }
+//
+//        FileSystem zipfs = null;
+//        Map<String,String> env = new HashMap<>();
+//        env.put( "create", "false" );
+//        env.put( "encoding", "UTF-8" );
+//
+//        try {
+//            zipfs = FileSystems.newFileSystem(uri, env);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            fail( e.getMessage() );
+//        }
+//
+//
+////        File path = new File( jarPath );
+//        FileProvider fp = null; //new FileProvider( url );
+//        try {
+//            fp = new FileProvider( uri.toURL() );
+//        } catch (MalformedURLException e) {
+//            e.printStackTrace();
+//            fail(e.getMessage());
+//        }
+//        try {
+//            fp.open();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            fail( e.getMessage() );
+//        }
+//
+//        fp.close();
+//
+//        RAMDictionary dict = new RAMDictionary( url, ILoadPolicy.IMMEDIATE_LOAD ); // path in ccg wordnet jar
 
-        FileSystem zipfs = null;
-        Map<String,String> env = new HashMap<>();
-        env.put( "create", "false" );
-        env.put( "encoding", "UTF-8" );
-
-        try {
-            zipfs = FileSystems.newFileSystem(uri, env);
-        } catch (IOException e) {
-            e.printStackTrace();
-            fail( e.getMessage() );
-        }
-
-
-//        File path = new File( jarPath );
-        FileProvider fp = null; //new FileProvider( url );
-        try {
-            fp = new FileProvider( uri.toURL() );
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
-        try {
-            fp.open();
-        } catch (IOException e) {
-            e.printStackTrace();
-            fail( e.getMessage() );
-        }
-
-        fp.close();
-
-        RAMDictionary dict = new RAMDictionary( url, ILoadPolicy.IMMEDIATE_LOAD ); // path in ccg wordnet jar
+        RAMDictionary dict = new RAMDictionaryFromJar().getRAMDictionaryFromJar( jarPath );
         try {
             dict.open();
         } catch (IOException e) {
