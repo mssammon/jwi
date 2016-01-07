@@ -12,6 +12,7 @@ package edu.mit.jwi.data;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 
 /**
  * Concrete implementation of a wordnet file data source. This particular
@@ -40,7 +41,7 @@ public class DirectAccessWordnetFile<T> extends WordnetFile<T> {
 	 *         is <code>null</code>
 	 * @since JWI 2.0.0
 	 */
-	public DirectAccessWordnetFile(File file, IContentType<T> contentType) {
+	public DirectAccessWordnetFile(Path file, IContentType<T> contentType) {
 		super(file, contentType);
 	}
 	

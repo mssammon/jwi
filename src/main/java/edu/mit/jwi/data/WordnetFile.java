@@ -10,11 +10,11 @@
 
 package edu.mit.jwi.data;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
@@ -51,7 +51,7 @@ public abstract class WordnetFile<T> implements ILoadableDataSource<T> {
 	private final String name;
 	private final IContentType<T> type;
 	private final ICommentDetector detector;
-	private final File file;
+	private final Path file;
 
 	// loading locks and status flag
 	// the flag is marked transient to avoid different values in different threads 
@@ -60,7 +60,7 @@ public abstract class WordnetFile<T> implements ILoadableDataSource<T> {
 	private final Lock loadingLock = new ReentrantLock();
 	
 	// fields generated dynamically on demand
-	private FileChannel channel;
+//	private SeekableByteChannel channel;
 	private ByteBuffer buffer;
 	private IVersion version;
 
@@ -81,11 +81,12 @@ public abstract class WordnetFile<T> implements ILoadableDataSource<T> {
 	 *             if the specified file or content type is <code>null</code>
 	 * @since JWI 1.0
 	 */
-	public WordnetFile(File file, IContentType<T> contentType) {
+	public WordnetFile(Path file, IContentType<T> contentType) {
 		if(contentType == null)
 			throw new NullPointerException();
-		this.name = file.getName();
-		this.file = file;
+		this.name = file.getName( file.getNameCount() -1 ).toString();
+		// ugly solution: extract file to disk in temporary cache, then use it directly
+		this.file = file; // file.toFile();
 		this.type = contentType;
 		this.detector = type.getLineComparator().getCommentDetector();
 	}
@@ -106,7 +107,7 @@ public abstract class WordnetFile<T> implements ILoadableDataSource<T> {
 	 *         <code>null</code>
 	 * @since JWI 2.2.0
 	 */
-	public File getFile(){
+	public Path getFile(){
 		return file;
 	}
 
@@ -133,20 +134,20 @@ public abstract class WordnetFile<T> implements ILoadableDataSource<T> {
 		return type;
 	}
 
-	/* 
-	 * (non-Javadoc) 
-	 *
-	 * @see edu.mit.jwi.data.IHasLifecycle#open()
+	/**
+	 * CHANGED: MS: now loads on call to open(). This avoids the problems working with
+     *    actual File objects, allowing use of jar/classpath approach favored by CCG.
 	 */
 	public boolean open() throws IOException { 
 		try {
 			lifecycleLock.lock();
 			if(isOpen()) 
 				return true;
-			@SuppressWarnings ("resource")
-			RandomAccessFile raFile = new RandomAccessFile(file, "r");
-			channel = raFile.getChannel();
-			buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+//			@SuppressWarnings ("resource")
+//			RandomAccessFile raFile = new RandomAccessFile(file.toUri());
+//			channel = Files.newByteChannel( file ); // default READ
+
+            buffer = ByteBuffer.wrap( Files.readAllBytes( file ) ); // not intended for "large" files... hopefully OK here though
 			return true;
 		} finally {
 			lifecycleLock.unlock();
@@ -178,14 +179,14 @@ public abstract class WordnetFile<T> implements ILoadableDataSource<T> {
 			version = null;
 			buffer = null;
 			isLoaded = false;
-			if(channel != null){
-				try {
-					channel.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			channel = null;
+//			if(channel != null){
+//				try {
+//					channel.close();
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//				}
+//			}
+//			channel = null;
 		} finally {
 			lifecycleLock.unlock();
 		}
@@ -214,36 +215,41 @@ public abstract class WordnetFile<T> implements ILoadableDataSource<T> {
 	 *
 	 * @see edu.mit.jwi.data.ILoadable#load(boolean)
 	 */
-	public void load(boolean block) {
-		try {
-			loadingLock.lock();
-			int len = (int)file.length();
-			ByteBuffer buf = buffer.asReadOnlyBuffer();
-			buf.clear();
-			byte[] data = new byte[len];
-			buf.get(data, 0, len);
-			
-			try{
-				lifecycleLock.lock();
-				if(channel != null){
-					try {
-						channel.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					channel = null;
-				}
-				if(buffer != null){
-					buffer = ByteBuffer.wrap(data);
-					isLoaded = true;
-				}
-			} finally {
-				lifecycleLock.unlock();
-			}
-			
-		} finally {
-			loadingLock.unlock();
-		}
+	public void load(boolean block){
+        if ( null != buffer ) // MS: short circuit
+            return;
+        else
+            System.err.println( "File contents from " + file.getFileName().toString()
+                + " should have been loaded at instantiation." );
+//		try {
+//			loadingLock.lock();
+//			int len = (int)file.length();
+//			ByteBuffer buf = buffer.asReadOnlyBuffer();
+//			buf.clear();
+//			byte[] data = new byte[len];
+//			buf.get(data, 0, len);
+//
+//			try{
+//				lifecycleLock.lock();
+//				if(channel != null){
+//					try {
+//						channel.close();
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//					}
+//					channel = null;
+//				}
+//				if(buffer != null){
+//					buffer = ByteBuffer.wrap(data);
+//					isLoaded = true;
+//				}
+//			} finally {
+//				lifecycleLock.unlock();
+//			}
+//
+//		} finally {
+//			loadingLock.unlock();
+//		}
 	}
 
 	/**

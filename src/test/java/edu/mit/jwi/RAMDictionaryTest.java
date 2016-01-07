@@ -25,10 +25,16 @@ import static org.junit.Assert.fail;
  */
 public class RAMDictionaryTest {
 
+    /**
+     * TODO: READ FROM CONFIG FILE
+     */
+    private static final String WORDNET_FILES_HOME = "/shared/corpora/ccgDependencies/WordNet-3.0/dict";
+
+
     @Test
     public void testInstantiationFromJar()
     {
-        String jarPath = "wordnet/dict";
+        String jarPath = "wordnet-dict";
 
         boolean isCompressed = false;
         URI uri = null;
@@ -71,9 +77,15 @@ public class RAMDictionaryTest {
 
         fp.close();
 
-        RAMDictionary dict = new RAMDictionary( url, ILoadPolicy.NO_LOAD ); // path in ccg wordnet jar
-
+        RAMDictionary dict = new RAMDictionary( url, ILoadPolicy.IMMEDIATE_LOAD ); // path in ccg wordnet jar
+        try {
+            dict.open();
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail( e.getMessage() );
+        }
         dict.load();
+//        dict.load();
 
         IIndexWord result = dict.getIndexWord( "beat", POS.NOUN );
 
@@ -83,7 +95,21 @@ public class RAMDictionaryTest {
     @Test
     public void testInstantiationFromLocalFile()
     {
+        File f = new File( WORDNET_FILES_HOME );
 
+        RAMDictionary dict = new RAMDictionary( f, ILoadPolicy.IMMEDIATE_LOAD ); // path in ccg wordnet jar
+        try {
+            dict.open();
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail( e.getMessage() );
+        }
+        dict.load();
+//        dict.load();
+
+        IIndexWord result = dict.getIndexWord( "beat", POS.NOUN );
+
+        System.out.println( "found tag sense count of: " + result.getTagSenseCount() );
     }
 
 }

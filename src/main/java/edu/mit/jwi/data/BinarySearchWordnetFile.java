@@ -12,6 +12,7 @@ package edu.mit.jwi.data;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.util.Comparator;
 
 /**
@@ -44,7 +45,7 @@ public class BinarySearchWordnetFile<T> extends WordnetFile<T> {
 	 *         is <code>null</code>
 	 * @since JWI 2.0.0
 	 */
-	public BinarySearchWordnetFile(File file, IContentType<T> contentType) {
+	public BinarySearchWordnetFile(Path file, IContentType<T> contentType) {
 		super(file, contentType);
 		fComparator = getContentType().getLineComparator();
 	}

@@ -18,16 +18,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.nio.file.*;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -299,21 +291,51 @@ public class FileProvider implements IDataProvider, ILoadable, ILoadPolicy {
 			loadingLock.lock();
 			
 			int policy = getLoadPolicy();
-			
-			// make sure directory exists
-			File directory = toFile(url);
-			if (!directory.exists()) 
-				throw new IOException("Dictionary directory does not exist: " + directory);
-	
-			// get files in directory
-			List<File> files = new ArrayList<File>(Arrays.asList(directory.listFiles(new FileFilter(){
-				public boolean accept(File file) {
-					return file.isFile();
-				}
-			})));
-			if(files.isEmpty()) 
-				throw new IOException("No files found in " + directory);
-			
+
+//			// make sure directory exists
+//			File directory = toFile(url);
+//			if (!directory.exists())
+//				throw new IOException("Dictionary directory does not exist: " + directory);
+//
+//			// get files in directory
+//			List<File> files = new ArrayList<File>(Arrays.asList(directory.listFiles(new FileFilter(){
+//				public boolean accept(File file) {
+//					return file.isFile();
+//				}
+//			})));
+//			if(files.isEmpty())
+//				throw new IOException("No files found in " + directory);
+
+			Path dirPath = null;
+			try {
+				dirPath = Paths.get( url.toURI() );
+			} catch (URISyntaxException e) {
+				e.printStackTrace();
+				throw new IOException(e);
+			}
+
+			System.out.println( "path dirPath: " + dirPath.toString() );
+
+			if ( !Files.isDirectory( dirPath, LinkOption.NOFOLLOW_LINKS ) )
+				throw new IOException( "path '" + dirPath.toString() + "' does not point to a directory." );
+
+			DirectoryStream<Path> dirStream = Files.newDirectoryStream( dirPath );
+
+//			if ( !dirStream.iterator().hasNext() )
+//				throw new IOException( "path '" + dirPath.toString() + "' contains no files." );
+
+
+			// make the source map
+			List<Path> files = new LinkedList<>();
+
+			for ( Path p : dirStream )
+			{
+				files.add( p );
+			}
+
+			if ( files.isEmpty())
+				throw new IOException("directory " + dirPath.toString() + " is empty." );
+
 			// make the source map
 			Map<IContentType<?>, ILoadableDataSource<?>> hiddenMap = createSourceMap(files, policy);
 			if(hiddenMap.isEmpty()) 
@@ -421,9 +443,9 @@ public class FileProvider implements IDataProvider, ILoadable, ILoadPolicy {
 	 *             if there is a problem creating the data source
 	 * @since JWI 2.2.0
 	 */
-	protected Map<IContentType<?>, ILoadableDataSource<?>> createSourceMap(List<File> files, int policy) throws IOException {
+	protected Map<IContentType<?>, ILoadableDataSource<?>> createSourceMap(List<Path> files, int policy) throws IOException {
 		Map<IContentType<?>, ILoadableDataSource<?>> result = new HashMap<IContentType<?>, ILoadableDataSource<?>>();
-		File file;
+		Path file;
 		for (IContentType<?> type : types) {
 			file = DataType.find(type.getDataType(), type.getPOS(), files);
 			if(file == null) continue;
@@ -452,7 +474,7 @@ public class FileProvider implements IDataProvider, ILoadable, ILoadPolicy {
 	 *             if there is an IO problem when creating the data source
 	 * @since JWI 2.2.0
 	 */
-	protected <T> ILoadableDataSource<T> createDataSource(File file, IContentType<T> type, int policy) throws IOException {
+	protected <T> ILoadableDataSource<T> createDataSource(Path file, IContentType<T> type, int policy) throws IOException {
 		
 		ILoadableDataSource<T> src;
 		if(type.getDataType() == DataType.DATA){
@@ -520,7 +542,7 @@ public class FileProvider implements IDataProvider, ILoadable, ILoadPolicy {
 	 *             object
 	 * @since JWI 2.2.0
 	 */
-	protected <T> ILoadableDataSource<T> createDirectAccess(File file, IContentType<T> type) throws IOException {
+	protected <T> ILoadableDataSource<T> createDirectAccess(Path file, IContentType<T> type) throws IOException {
 		return new DirectAccessWordnetFile<T>(file, type);
 	}
 
@@ -544,7 +566,7 @@ public class FileProvider implements IDataProvider, ILoadable, ILoadPolicy {
 	 *             object
 	 * @since JWI 2.2.0
 	 */
-	protected <T> ILoadableDataSource<T> createBinarySearch(File file, IContentType<T> type) throws IOException {
+	protected <T> ILoadableDataSource<T> createBinarySearch(Path file, IContentType<T> type) throws IOException {
 		return new BinarySearchWordnetFile<T>(file, type);
 	}
 	

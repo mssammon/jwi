@@ -12,6 +12,7 @@ package edu.mit.jwi.data;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -208,14 +209,14 @@ public class DataType<T> implements IDataType<T> {
 	 *             if the data type or file collection is <code>null</code>
 	 * @since JWI 2.2.0
 	 */
-	public static File find(IDataType<?> type, POS pos, Collection<? extends File> files){
+	public static Path find(IDataType<?> type, POS pos, List<Path> files){
 
 		Set<String> typePatterns = type.getResourceNameHints();
 		Set<String> posPatterns = (pos == null) ? Collections.<String>emptySet() : pos.getResourceNameHints();
 		
 		String name;
-		for (File file : files) {
-			name = file.getName().toLowerCase(); // added toLowerCase() as fix for Bug 017
+		for (Path file : files) {
+			name = file.getName( file.getNameCount() - 1 ).toString().toLowerCase(); // added toLowerCase() as fix for Bug 017
 			if(containsOneOf(name, typePatterns) && containsOneOf(name, posPatterns)) 
 				return file;
 		}
